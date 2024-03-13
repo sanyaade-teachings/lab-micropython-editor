@@ -426,7 +426,7 @@ async function store(state, emitter) {
         for (let i in state.selectedBoardFiles) {
           const file = state.selectedBoardFiles[i]
           if (file.type === 'folder') {
-            let folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
+            const folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
             let command = microPythonFShelpers
             command += microPythonDeleteFolder
             command += `delete_folder('${folder_path}')`
@@ -699,78 +699,80 @@ async function store(state, emitter) {
 
   // DOWNLOAD AND UPLOAD FILES
   emitter.on('upload-files', async () => {
-    state.isTransferring = true
-    emitter.emit('render')
-
-    for (let i in state.selectedFiles) {
-      const file = state.selectedFiles[i]
-      if (file.type === 'folder') {
-        const confirmAction = alert(`Folder transfer not yet available`)
-        continue
-      }
-      const confirmAction = confirm(`Copying ${file.fileName} might overwrite an existing file at destination.\nAre you sure you want to proceed?`, 'Cancel', 'Yes')
-      if (!confirmAction) {
-        continue
-      }
-      await serial.uploadFile(
-        disk.getFullPath(
-          state.diskNavigationRoot,
-          state.diskNavigationPath,
-          file.fileName
-        ),
-        serial.getFullPath(
-          '/',
-          state.boardNavigationPath,
-          file.fileName
-        ),
-        (e) => {
-          state.transferringProgress = e
-          emitter.emit('render')
+    const fileNames = state.selectedDiskFiles.filter((f) => f.source === 'disk').map((f) => f.fileName)
+    const confirmAction = confirm(`Copying these items might overwrite existing files/folders on your board:\n ${fileNames.join('\n')}`, 'Cancel', 'Proceed')
+    if (confirmAction) {
+      state.isTransferring = true
+      emitter.emit('render')
+      for (let i in state.selectedDiskFiles) {
+        const file = state.selectedDiskFiles[i]
+        if (file.type === 'folder') {
+          const confirmAction = alert(`Folder transfer not yet available`)
+          continue
         }
-      )
+        
+        await serial.uploadFile(
+          disk.getFullPath(
+            state.diskNavigationRoot,
+            state.diskNavigationPath,
+            file.fileName
+          ),
+          serial.getFullPath(
+            '/',
+            state.boardNavigationPath,
+            file.fileName
+          ),
+          (e) => {
+            state.transferringProgress = e
+            emitter.emit('render')
+          }
+        )
+        
+      }
+      state.isTransferring = false
+      state.selectedFiles = []
+      state.selectedBoardFiles = []
+      state.selectedDiskFiles = []
+      emitter.emit('refresh-files')
+      emitter.emit('render')
     }
-
-    state.isTransferring = false
-    state.selectedFiles = []
-    emitter.emit('refresh-files')
-    emitter.emit('render')
   })
   emitter.on('download-files', async () => {
-    state.isTransferring = true
-    emitter.emit('render')
-
-    for (let i in state.selectedFiles) {
-      const file = state.selectedFiles[i]
-      if (file.type === 'folder') {
-        const confirmAction = alert(`Folder transfer not yet available`)
-        continue
-      }
-      const confirmAction = confirm(`Copying ${file.fileName} might overwrite an existing file, are you sure you want to proceed?`, 'Cancel', 'Yes')
-      if (!confirmAction) {
-        continue
-      }
-      await serial.downloadFile(
-        serial.getFullPath(
-          '/',
-          state.boardNavigationPath,
-          file.fileName
-        ),
-        disk.getFullPath(
-          state.diskNavigationRoot,
-          state.diskNavigationPath,
-          file.fileName
-        ),
-        (e) => {
-          state.transferringProgress = e
-          emitter.emit('render')
+    const fileNames = state.selectedBoardFiles.filter((f) => f.source === 'board').map((f) => f.fileName)
+    const confirmAction = confirm(`Copying these items might overwrite existing files/folders on your computer:\n ${fileNames.join('\n')}`, 'Cancel', 'Proceed')
+    if (confirmAction) {
+      state.isTransferring = true
+      emitter.emit('render')
+      for (let i in state.selectedBoardFiles) {
+        const file = state.selectedBoardFiles[i]
+        if (file.type === 'folder') {
+          const confirmAction = alert(`Folder transfer not yet available`)
+          continue
         }
-      )
+        await serial.downloadFile(
+          serial.getFullPath(
+            '/',
+            state.boardNavigationPath,
+            file.fileName
+          ),
+          disk.getFullPath(
+            state.diskNavigationRoot,
+            state.diskNavigationPath,
+            file.fileName
+          ),
+          (e) => {
+            state.transferringProgress = e
+            emitter.emit('render')
+          }
+        )
+      }
+      state.isTransferring = false
+      state.selectedFiles = []
+      state.selectedBoardFiles = []
+      state.selectedDiskFiles = []
+      emitter.emit('refresh-files')
+      emitter.emit('render')
     }
-
-    state.isTransferring = false
-    state.selectedFiles = []
-    emitter.emit('refresh-files')
-    emitter.emit('render')
   })
 
   // NAVIGATION
