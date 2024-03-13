@@ -3,6 +3,15 @@ const serial = window.BridgeSerial
 const disk = window.BridgeDisk
 const win = window.BridgeWindow
 
+function extract(out) {
+  /*
+   * Message ($msg) will come out following this template:
+   * "OK${msg}\x04${err}\x04>"
+   * TODO: consider error handling
+   */
+  return out.slice(2, -3)
+}
+
 const newFileContent = `# This program was created in Arduino Lab for MicroPython
 
 print('Hello, MicroPython!')
@@ -54,12 +63,11 @@ def get_file_tree(path = '.'):
     if file_path in ('.', os.getcwd()):
       continue
     file_name = file_path.split('/')[len(file_path.split('/'))-1]
-    tree_list.insert(0, (depth, file_path, file_name, is_folder))
+    tree_list.insert(0, list((depth, file_path, file_name, 'folder' if is_folder else 'file')))
   return tree_list
 
 def print_file_tree(path = '.'):
-  for depth, file_path, file_name, is_folder in get_file_tree(path):
-    print([file_path, file_name, is_folder])
+  print(get_file_tree(path))
 `
 async function store(state, emitter) {
   win.setWindowSize(720, 640)
@@ -422,19 +430,10 @@ async function store(state, emitter) {
     })
     emitter.emit('render')
   })
-  // emitter.on('remove-folder', async () => {
-  //   state.isRemoving = true
-  //   console.log('store > remove-folder')
-  //   emitter.emit('render')
-  // })
   emitter.on('remove-files', async () => {
     state.isRemoving = true
     emitter.emit('render')
-    console.log('store > remove-files')
-    
-    
     if (state.selectedBoardFiles.length > 0) {
-      console.log(state.selectedBoardFiles)
       const fileNames = state.selectedBoardFiles.filter((f) => f.source === 'board').map((f) => f.fileName)
       const confirmBoardDeletion = confirm(`Delete these items from the board?\n ${fileNames.join('\n')}?`, 'Cancel', 'Yes')
       if (confirmBoardDeletion) {
@@ -461,7 +460,6 @@ async function store(state, emitter) {
     }
 
     if (state.selectedDiskFiles.length > 0) {
-      console.log(state.selectedDiskFiles)
       const fileNames = state.selectedDiskFiles.filter((f) => f.source === 'disk').map((f) => f.fileName)
       const confirmDiskDeletion = confirm(`Delete these items from the disk?\n ${fileNames.join('\n')}?`, 'Cancel', 'Yes')
       if (confirmDiskDeletion) {
@@ -548,7 +546,6 @@ async function store(state, emitter) {
   emitter.on('finish-renaming', () => {})
   emitter.on('finish-creating', async (value) => {
     if (!state.creatingFile && !state.creatingFolder){
-      console.log('neither creating file nor folder')
       return
     } 
 
@@ -609,7 +606,6 @@ async function store(state, emitter) {
   emitter.on('close-file-options', () => {})
 
   emitter.on('toggle-file-selection', (file, source, event) => {
-    console.log(event, file, source)
     const isSelected = state.selectedFiles.find((f) => {
       return f.fileName === file.fileName && f.source === source
     })
@@ -643,10 +639,8 @@ async function store(state, emitter) {
       parentFolder: file.parentFolder
     })
     emitter.emit('open-selected-files')
-    console.log('open-single-file', file)
   })
   emitter.on('open-selected-files', async () => {
-    console.log('open-selected-files')
     let files = []
     for (let i in state.selectedFiles) {
       let selectedFile = state.selectedFiles[i]
@@ -702,7 +696,6 @@ async function store(state, emitter) {
     })
 
     if (files.length > 0) {
-      // console.log(state.openFiles, files)
       state.openFiles = state.openFiles.concat(files)
       state.editingFile = files[0].id
     }
@@ -765,9 +758,31 @@ async function store(state, emitter) {
           let command = microPythonFShelpers
           command += microPythonFileTree
           command += `print_file_tree('${folder_path}')`
-          const output = await serial.run(command)
-          console.log(output)
-          const confirmAction = alert(`Folder transfer not yet available`)
+          let output = await serial.run(command)
+          output = extract(output)
+          output = output.replace(/'/g, '"')
+          output = output.split('OK')
+          let files = JSON.parse(output)
+          for(f in files){
+            const sourcePath = (files[f][1])
+            const type = files[f][3]
+            const sourceRelativePath = sourcePath.split(state.boardNavigationPath)[1]
+            if(type === 'folder'){
+              const newFolderPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath,`/${sourceRelativePath}`)
+              await disk.createFolder(newFolderPath)
+            }else{
+              const fileDestinationPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath,`/${sourceRelativePath}`)
+              state.transferringProgress = sourcePath
+              await serial.downloadFile(
+                sourcePath,
+                fileDestinationPath,
+                (e) => {
+                  state.transferringProgress = e
+                  emitter.emit('render')
+                })
+              emitter.emit('render')
+            }
+          }
           continue
         }
         await serial.downloadFile(
@@ -1001,7 +1016,6 @@ function canUpload({ isConnected, selectedFiles }) {
 }
 
 function deselectFilesFromSource(source, selectedFiles) {
-  console.log('deselectFilesFromSource', source, selectedFiles)
   if (selectedFiles.length === 0) return []
   return selectedFiles.filter((f) => f.source !== source)
 }
