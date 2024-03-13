@@ -421,7 +421,7 @@ async function store(state, emitter) {
     if (state.selectedBoardFiles.length > 0) {
       console.log(state.selectedBoardFiles)
       const fileNames = state.selectedBoardFiles.filter((f) => f.source === 'board').map((f) => f.fileName)
-      const confirmBoardDeletion = confirm(`Delete these items from the board? ${fileNames}?`, 'Cancel', 'Yes')
+      const confirmBoardDeletion = confirm(`Delete these items from the board?\n ${fileNames.join('\n')}?`, 'Cancel', 'Yes')
       if (confirmBoardDeletion) {
         for (let i in state.selectedBoardFiles) {
           const file = state.selectedBoardFiles[i]
@@ -448,7 +448,7 @@ async function store(state, emitter) {
     if (state.selectedDiskFiles.length > 0) {
       console.log(state.selectedDiskFiles)
       const fileNames = state.selectedDiskFiles.filter((f) => f.source === 'disk').map((f) => f.fileName)
-      const confirmDiskDeletion = confirm(`Delete these items from the disk? ${fileNames}?`, 'Cancel', 'Yes')
+      const confirmDiskDeletion = confirm(`Delete these items from the disk?\n ${fileNames.join('\n')}?`, 'Cancel', 'Yes')
       if (confirmDiskDeletion) {
         for (let i in state.selectedDiskFiles) {
           const file = state.selectedDiskFiles[i]
