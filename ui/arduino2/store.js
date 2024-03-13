@@ -7,7 +7,7 @@ const newFileContent = `# This program was created in Arduino Lab for MicroPytho
 
 print('Hello, MicroPython!')
 `
-const microPythonTreeDelete = `
+const microPythonFShelpers = `
 import os
 os.chdir('/')
 def is_directory(path):
@@ -34,14 +34,15 @@ def delete_fs_item(fs_path, is_folder = False):
     os.rmdir(fs_path)
   else:
     os.remove(fs_path)
+`
 
+const microPythonDeleteFolder = `
 def delete_folder(path = '.'):
   for depth, is_folder, file_path in file_tree_generator(path):
     if file_path in ('.', os.getcwd()):
       print('cannot delete current folder')
       continue
     delete_fs_item(file_path, is_folder)
-    
 `
 
 
@@ -414,58 +415,105 @@ async function store(state, emitter) {
   emitter.on('remove-files', async () => {
     state.isRemoving = true
     emitter.emit('render')
-
-    for (let i in state.selectedFiles) {
-      const file = state.selectedFiles[i]
-      const confirmAction = confirm(`You are about to delete ${file.fileName} from your ${file.source}.\nAre you sure you want to proceed?`, 'Cancel', 'Yes')
-      if (!confirmAction) {
-        continue
-      }
-      if (file.source === 'board') {
-        if (file.type === 'folder') {
-          let command = microPythonTreeDelete
-          let folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
-          command += `delete_folder('${folder_path}')`
-          await serial.run(command)
-          // await serial.removeFolder(
-          //   serial.getFullPath(
-          //     '/',
-          //     state.boardNavigationPath,
-          //     file.fileName
-          //   )
-          // )
-        } else {
-          await serial.removeFile(
-            serial.getFullPath(
-              '/',
-              state.boardNavigationPath,
-              file.fileName
+    console.log('store > remove-files')
+    
+    
+    if (state.selectedBoardFiles.length > 0) {
+      console.log(state.selectedBoardFiles)
+      const fileNames = state.selectedBoardFiles.filter((f) => f.source === 'board').map((f) => f.fileName)
+      const confirmBoardDeletion = confirm(`Delete these items from the board? ${fileNames}?`, 'Cancel', 'Yes')
+      if (confirmBoardDeletion) {
+        for (let i in state.selectedBoardFiles) {
+          const file = state.selectedBoardFiles[i]
+          if (file.type === 'folder') {
+            let folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
+            let command = microPythonFShelpers
+            command += microPythonDeleteFolder
+            command += `delete_folder('${folder_path}')`
+            await serial.run(command)
+          }else {
+            await serial.removeFile(
+              serial.getFullPath(
+                '/',
+                state.boardNavigationPath,
+                file.fileName
+              )
             )
-          )
+          }
         }
-      } else {
-        if (file.type === 'folder') {
-          await disk.removeFolder(
-            disk.getFullPath(
-              state.diskNavigationRoot,
-              state.diskNavigationPath,
-              file.fileName
-            )
-          )
-        } else {
-          await disk.removeFile(
-            disk.getFullPath(
-              state.diskNavigationRoot,
-              state.diskNavigationPath,
-              file.fileName
-            )
-          )
-        }
+        selectedFiles = deselectFilesFromSource('board', state.selectedFiles)
       }
     }
 
+    if (state.selectedDiskFiles.length > 0) {
+      console.log(state.selectedDiskFiles)
+      const fileNames = state.selectedDiskFiles.filter((f) => f.source === 'disk').map((f) => f.fileName)
+      const confirmDiskDeletion = confirm(`Delete these items from the disk? ${fileNames}?`, 'Cancel', 'Yes')
+      if (confirmDiskDeletion) {
+        for (let i in state.selectedDiskFiles) {
+          const file = state.selectedDiskFiles[i]
+          if (file.type === 'folder') {
+            await disk.removeFolder(
+              disk.getFullPath(
+                state.diskNavigationRoot,
+                state.diskNavigationPath,
+                file.fileName
+              )
+            )
+          } else {
+            await disk.removeFile(
+              disk.getFullPath(
+                state.diskNavigationRoot,
+                state.diskNavigationPath,
+                file.fileName
+              )
+            )
+          }
+        }
+      }
+    }
+    // for (let i in state.selectedFiles) {
+    //   const file = state.selectedFiles[i]
+      
+    //   if (file.source === 'board') {
+    //     if (file.type === 'folder') {
+    //       let folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
+    //       let command = microPythonFShelpers
+    //       command += microPythonDeleteFolder
+    //       command += `delete_folder('${folder_path}')`
+    //       await serial.run(command)
+    //     } else {
+    //       await serial.removeFile(
+    //         serial.getFullPath(
+    //           '/',
+    //           state.boardNavigationPath,
+    //           file.fileName
+    //         )
+    //       )
+    //     }
+    //   } else {
+    //     if (file.type === 'folder') {
+    //       await disk.removeFolder(
+    //         disk.getFullPath(
+    //           state.diskNavigationRoot,
+    //           state.diskNavigationPath,
+    //           file.fileName
+    //         )
+    //       )
+    //     } else {
+    //       await disk.removeFile(
+    //         disk.getFullPath(
+    //           state.diskNavigationRoot,
+    //           state.diskNavigationPath,
+    //           file.fileName
+    //         )
+    //       )
+    //     }
+    //   }
+    // }
+
     emitter.emit('refresh-files')
-    state.selectedFiles = []
+    // state.selectedFiles = []
     state.isRemoving = false
     emitter.emit('render')
   })
