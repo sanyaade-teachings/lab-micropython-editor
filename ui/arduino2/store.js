@@ -45,7 +45,22 @@ def delete_folder(path = '.'):
     delete_fs_item(file_path, is_folder)
 `
 
+const microPythonFileTree = `
+def get_file_tree(path = '.'):
+  tree_list = []
+  if path in ('', '.'):
+    path = os.getcwd()
+  for depth, is_folder, file_path in file_tree_generator(path):
+    if file_path in ('.', os.getcwd()):
+      continue
+    file_name = file_path.split('/')[len(file_path.split('/'))-1]
+    tree_list.insert(0, (depth, file_path, file_name, is_folder))
+  return tree_list
 
+def print_file_tree(path = '.'):
+  for depth, file_path, file_name, is_folder in get_file_tree(path):
+    print([file_path, file_name, is_folder])
+`
 async function store(state, emitter) {
   win.setWindowSize(720, 640)
 
@@ -746,6 +761,12 @@ async function store(state, emitter) {
       for (let i in state.selectedBoardFiles) {
         const file = state.selectedBoardFiles[i]
         if (file.type === 'folder') {
+          const folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
+          let command = microPythonFShelpers
+          command += microPythonFileTree
+          command += `print_file_tree('${folder_path}')`
+          const output = await serial.run(command)
+          console.log(output)
           const confirmAction = alert(`Folder transfer not yet available`)
           continue
         }
