@@ -31,7 +31,10 @@ function DiskFileList(state, emit) {
     } else {
       const isChecked = state.selectedFiles.find(f => f.fileName === item.fileName && f.source === 'disk')
       return html`
-        <div class="item ${isChecked ? 'checked' : ''}" onclick=${(e) => emit('toggle-file-selection', item, 'disk', e)} ondblclick=${() => emit('open-single-file', item, 'disk')}>
+        <div class="item ${isChecked ? 'checked' : ''}"
+          onclick=${(e) => emit('toggle-file-selection', item, 'disk', e)}
+          ondblclick=${() => emit('open-single-file', item, 'disk')}
+        >
           ${Checkbox({
             checked: isChecked,
             type: 'file',
@@ -120,7 +123,10 @@ function BoardFileList(state, emit) {
     } else {
       const isChecked = state.selectedFiles.find(f => f.fileName === item.fileName && f.source === 'board')
       return html`
-        <div class="item ${isChecked ? 'checked' : ''}" onclick=${(e) => emit('toggle-file-selection', item, 'board', e)} ondblclick=${() => emit('open-single-file', item, 'board')}>
+        <div class="item ${isChecked ? 'checked' : ''}"
+          onclick=${(e) => emit('toggle-file-selection', item, 'board', e)}
+          ondblclick=${() => emit('open-single-file', item, 'board')}
+        >
           ${Checkbox({
             checked: isChecked,
             type: 'file',
