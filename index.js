@@ -94,7 +94,7 @@ ipcMain.handle('save-file', (event, filePath, content) => {
 
 ipcMain.handle('create-folder', (event, filePath) => {
   console.log('ipcMain', 'create-folder', filePath)
-  fs.mkdirSync(filePath)
+  fs.mkdirSync(filePath, { recursive: true})
   return true
 })
 

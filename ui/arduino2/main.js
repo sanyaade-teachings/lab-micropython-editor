@@ -21,12 +21,15 @@ function App(state, emit) {
     emit('load-disk-files')
     return html`<div id="app"><p>Loading files...</p></div>`
   }
-
-  if (state.isRemoving) return html`<div id="app"><p>Removing...</p></div>`
+  let progressMessage = ''
+  if (state.transferringProgress != null){
+    progressMessage = ` [${state.transferringProgress}]`
+  }
+  if (state.isRemoving) return html`<div id="app"><p>Removing ${state.currentFSItem}</p></div>`
   if (state.isConnecting) return html`<div id="app"><p>Connecting...</p></div>`
   if (state.isLoadingFiles) return html`<div id="app"><p>Loading files...</p></div>`
-  if (state.isSaving) return html`<div id="app"><p>Saving file... ${state.savingProgress}</p></div>`
-  if (state.isTransferring) return html`<div id="app"><p>Transferring file: ${state.transferringProgress}</p></div>`
+  if (state.isSaving) return html`<div id="app"><p>Saving ${state.currentFSItem}${progressMessage}</p></div>`
+  if (state.isTransferring) return html`<div id="app"><p>Transferring ${state.currentFSItem}${progressMessage}</p></div>`
 
   return state.view == 'editor' ? EditorView(state, emit) : FileManagerView(state, emit)
 }

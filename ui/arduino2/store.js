@@ -101,6 +101,7 @@ async function store(state, emitter) {
   state.isTransferring = false
   state.transferringProgress = 0
   state.isRemoving = false
+  state.currentFSItem = null
 
   state.isLoadingFiles = false
   state.dialogs = []
@@ -269,6 +270,7 @@ async function store(state, emitter) {
 
     const save = async () => {
       state.isSaving = true
+      state.currentFSItem = openFile.fileName
       emitter.emit('render')
       try {
         if (openFile.source == 'board') {
@@ -439,6 +441,8 @@ async function store(state, emitter) {
       if (confirmBoardDeletion) {
         for (let i in state.selectedBoardFiles) {
           const file = state.selectedBoardFiles[i]
+          state.currentFSItem = file.fileName
+          emitter.emit('render')
           if (file.type === 'folder') {
             const folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
             let command = microPythonFShelpers
@@ -485,46 +489,6 @@ async function store(state, emitter) {
         }
       }
     }
-    // for (let i in state.selectedFiles) {
-    //   const file = state.selectedFiles[i]
-      
-    //   if (file.source === 'board') {
-    //     if (file.type === 'folder') {
-    //       let folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
-    //       let command = microPythonFShelpers
-    //       command += microPythonDeleteFolder
-    //       command += `delete_folder('${folder_path}')`
-    //       await serial.run(command)
-    //     } else {
-    //       await serial.removeFile(
-    //         serial.getFullPath(
-    //           '/',
-    //           state.boardNavigationPath,
-    //           file.fileName
-    //         )
-    //       )
-    //     }
-    //   } else {
-    //     if (file.type === 'folder') {
-    //       await disk.removeFolder(
-    //         disk.getFullPath(
-    //           state.diskNavigationRoot,
-    //           state.diskNavigationPath,
-    //           file.fileName
-    //         )
-    //       )
-    //     } else {
-    //       await disk.removeFile(
-    //         disk.getFullPath(
-    //           state.diskNavigationRoot,
-    //           state.diskNavigationPath,
-    //           file.fileName
-    //         )
-    //       )
-    //     }
-    //   }
-    // }
-
     emitter.emit('refresh-files')
     // state.selectedFiles = []
     state.isRemoving = false
@@ -593,11 +557,11 @@ async function store(state, emitter) {
         newFileContent
       )
     }
-    state.creatingFile = null
-    state.creatingFolder = null
+    
 
     setTimeout(() => {
       state.creatingFile = null
+      state.creatingFolder = null
       emitter.emit('refresh-files')
       emitter.emit('render')
     }, 200)
@@ -714,11 +678,12 @@ async function store(state, emitter) {
       emitter.emit('render')
       for (let i in state.selectedDiskFiles) {
         const file = state.selectedDiskFiles[i]
+        state.currentFSItem = file.fileName
+        state.transferringProgress = null
         if (file.type === 'folder') {
           const confirmAction = alert(`Folder transfer not yet available`)
           continue
         }
-        
         await serial.uploadFile(
           disk.getFullPath(
             state.diskNavigationRoot,
@@ -750,10 +715,11 @@ async function store(state, emitter) {
     const confirmAction = confirm(`Copying these items might overwrite existing files/folders on your computer:\n ${fileNames.join('\n')}`, 'Cancel', 'Proceed')
     if (confirmAction) {
       state.isTransferring = true
-      emitter.emit('render')
       for (let i in state.selectedBoardFiles) {
         const file = state.selectedBoardFiles[i]
         if (file.type === 'folder') {
+          state.currentFSItem = file.fileName
+          emitter.emit('render')
           const folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
           let command = microPythonFShelpers
           command += microPythonFileTree
@@ -769,10 +735,15 @@ async function store(state, emitter) {
             const sourceRelativePath = sourcePath.split(state.boardNavigationPath)[1]
             if(type === 'folder'){
               const newFolderPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath,`/${sourceRelativePath}`)
+              state.currentFSItem = file.fileName
+              state.transferringProgress = null
+              emitter.emit('render')
               await disk.createFolder(newFolderPath)
             }else{
               const fileDestinationPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath,`/${sourceRelativePath}`)
-              state.transferringProgress = sourcePath
+              state.currentFSItem = file.fileName
+              state.transferringProgress = null
+              emitter.emit('render')
               await serial.downloadFile(
                 sourcePath,
                 fileDestinationPath,
@@ -780,11 +751,13 @@ async function store(state, emitter) {
                   state.transferringProgress = e
                   emitter.emit('render')
                 })
-              emitter.emit('render')
             }
           }
           continue
         }
+        state.currentFSItem = file.fileName
+        state.transferringProgress = null
+        emitter.emit('render')
         await serial.downloadFile(
           serial.getFullPath(
             '/',
@@ -795,11 +768,7 @@ async function store(state, emitter) {
             state.diskNavigationRoot,
             state.diskNavigationPath,
             file.fileName
-          ),
-          (e) => {
-            state.transferringProgress = e
-            emitter.emit('render')
-          }
+          )
         )
       }
       state.isTransferring = false
