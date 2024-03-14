@@ -696,7 +696,7 @@ async function store(state, emitter) {
         if (file.type === 'folder') {
           
           let serialPath = await serial.getFullPath('/', state.boardNavigationPath, file.fileName)
-          log('deleteBoardFolder', serialPath)
+          // log('deleteBoardFolder', serialPath)
           await deleteBoardFolder(serialPath)
           await serial.createFolder(serialPath)
           const sourceDiskPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath, file.fileName)
@@ -705,7 +705,7 @@ async function store(state, emitter) {
             const fsItem = uploadTree[i]
             const strippedPath = fsItem.filePath.split(sourceDiskPath)[1]
             let nestedSerialPath = serialPath + strippedPath
-            if(fsItem.type === 'dir'){
+            if(fsItem.type === 'folder'){
               await serial.createFolder(nestedSerialPath)
             }else{
               const diskPath = fsItem.filePath
@@ -719,7 +719,6 @@ async function store(state, emitter) {
               )
             }
           }
-          const confirmAction = alert(`Folder transfer not yet available`)
           continue
         }
         await serial.uploadFile(
@@ -759,26 +758,34 @@ async function store(state, emitter) {
           state.currentFSItem = file.fileName
           emitter.emit('render')
           const folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
+          // log('folder_path', folder_path)
           let command = microPythonFShelpers
           command += microPythonFileTree
           command += `print_file_tree('${folder_path}')`
           let output = await serial.run(command)
+          // console.log(output)
           output = extract(output)
           output = output.replace(/'/g, '"')
           output = output.split('OK')
           let files = JSON.parse(output)
+           
+          // console.log(files)
           for(f in files){
             const sourcePath = (files[f][1])
             const type = files[f][3]
-            const sourceRelativePath = sourcePath.split(state.boardNavigationPath)[1]
+            const strippedPath = sourcePath.slice(sourcePath.indexOf(state.boardNavigationPath) + state.boardNavigationPath.length)
+            // console.log('sourcePath:', state.boardNavigationPath)
+            // console.log('strippedPath', sourcePath, strippedPath)
             if(type === 'folder'){
-              const newFolderPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath,`/${sourceRelativePath}`)
-              state.currentFSItem = file.fileName
+              const newFolderPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath,`${strippedPath}`)
+              // console.log('create new folder', sourcePath, newFolderPath)
+              state.currentFSItem = f.fileName
               state.transferringProgress = null
               emitter.emit('render')
               await disk.createFolder(newFolderPath)
             }else{
-              const fileDestinationPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath,`/${sourceRelativePath}`)
+              const fileDestinationPath = disk.getFullPath(state.diskNavigationRoot,state.diskNavigationPath, `${strippedPath}`)
+              // console.log('download file', sourcePath, fileDestinationPath)
               state.currentFSItem = file.fileName
               state.transferringProgress = null
               emitter.emit('render')

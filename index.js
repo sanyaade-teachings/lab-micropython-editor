@@ -33,7 +33,7 @@ function traverseDir(dir, list) {
   fs.readdirSync(dir).forEach(file => {
     let filePath = path.join(dir, file);
     let isDirectory = fs.lstatSync(filePath).isDirectory()
-    let type = isDirectory ? 'dir' : 'file'
+    let type = isDirectory ? 'folder' : 'file'
     if (isDirectory) {
        traverseDir(filePath, list);
     }
