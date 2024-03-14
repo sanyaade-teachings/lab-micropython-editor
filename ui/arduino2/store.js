@@ -12,6 +12,22 @@ function extract(out) {
   return out.slice(2, -3)
 }
 
+function getFolderTree(folder_path, result = []) {
+  fs.readdirSync(folder_path).forEach((file) => {
+  const fPath = path.resolve(folder_path, file)
+  const fileStats = { file, path: fPath }
+  if (fs.statSync(fPath).isDirectory()) {
+    fileStats.type = 'dir'
+    fileStats.files = []
+    result.push(fileStats)
+    return traverse(fPath, fileStats.files)
+  }
+  fileStats.type = 'file'
+  result.push(fileStats)
+  })
+  return result
+}
+
 const newFileContent = `# This program was created in Arduino Lab for MicroPython
 
 print('Hello, MicroPython!')
@@ -445,10 +461,7 @@ async function store(state, emitter) {
           emitter.emit('render')
           if (file.type === 'folder') {
             const folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
-            let command = microPythonFShelpers
-            command += microPythonDeleteFolder
-            command += `delete_folder('${folder_path}')`
-            await serial.run(command)
+            await deleteBoardFolder(folder_path)
           }else {
             await serial.removeFile(
               serial.getFullPath(
@@ -681,6 +694,31 @@ async function store(state, emitter) {
         state.currentFSItem = file.fileName
         state.transferringProgress = null
         if (file.type === 'folder') {
+          
+          let serialPath = await serial.getFullPath('/', state.boardNavigationPath, file.fileName)
+          log('deleteBoardFolder', serialPath)
+          await deleteBoardFolder(serialPath)
+          await serial.createFolder(serialPath)
+          const sourceDiskPath = disk.getFullPath(state.diskNavigationRoot, state.diskNavigationPath, file.fileName)
+          const uploadTree = await getDiskFolderTree(sourceDiskPath)
+          for (let i in uploadTree) {
+            const fsItem = uploadTree[i]
+            const strippedPath = fsItem.filePath.split(sourceDiskPath)[1]
+            let nestedSerialPath = serialPath + strippedPath
+            if(fsItem.type === 'dir'){
+              await serial.createFolder(nestedSerialPath)
+            }else{
+              const diskPath = fsItem.filePath
+              await serial.uploadFile(
+                diskPath,
+                nestedSerialPath,
+                (e) => {
+                  state.transferringProgress = e
+                  emitter.emit('render')
+                }
+              )
+            }
+          }
           const confirmAction = alert(`Folder transfer not yet available`)
           continue
         }
@@ -885,6 +923,27 @@ async function getDiskFiles(path) {
     type: f.type
   }))
   files = files.sort(sortFilesAlphabetically)
+  return files
+}
+
+async function deleteBoardFolder(folder_path) {
+  let command = microPythonFShelpers
+  command += microPythonDeleteFolder
+  command += `delete_folder('${folder_path}')`
+  const output = await serial.run(command)
+  return output
+}
+
+async function getDiskFolderTree(path) {
+  let files = await disk.getFolderTree(path)
+  log(files)
+  // files = files.map(f => ({
+  //   fileName: f.file,
+  //   filePath: f.path,
+  //   type: f.type
+  // }))
+  // // files = files.sort(sortFilesAlphabetically)
+  // log(files)
   return files
 }
 

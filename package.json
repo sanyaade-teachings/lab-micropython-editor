@@ -37,6 +37,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "directory-tree": "*",
     "about-window": "^1.15.2",
     "micropython.js": "github:arduino/micropython.js#v1.4.4"
   },

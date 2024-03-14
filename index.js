@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const openAboutWindow = require('about-window').default
 
+const { dir } = require('console')
 let win = null // main window
 
 // HELPERS
@@ -23,20 +24,21 @@ function listFolder(folder) {
 }
 
 function getFolderTree(folder_path, result = []) {
-  fs.readdirSync(folder_path).forEach((file) => {
-  const fPath = path.resolve(folder_path, file)
-  const fileStats = { file, path: fPath }
-  if (fs.statSync(fPath).isDirectory()) {
-    fileStats.type = 'dir'
-    fileStats.files = []
-    result.push(fileStats)
-    return traverse(fPath, fileStats.files)
-  }
+  let fsEntries = []
+  traverseDir(folder_path, fsEntries)
+  return fsEntries
+}
 
-  fileStats.type = 'file'
-  result.push(fileStats)
-  })
-  return result
+function traverseDir(dir, list) {
+  fs.readdirSync(dir).forEach(file => {
+    let filePath = path.join(dir, file);
+    let isDirectory = fs.lstatSync(filePath).isDirectory()
+    let type = isDirectory ? 'dir' : 'file'
+    if (isDirectory) {
+       traverseDir(filePath, list);
+    }
+    list.unshift({filePath: filePath, parentPath: dir, fileName: file, type: type, isDirectory: isDirectory});
+  });
 }
 
 function ilistFolder(folder) {
@@ -72,6 +74,12 @@ ipcMain.handle('list-files', async (event, folder) => {
   console.log('ipcMain', 'list-files', folder)
   if (!folder) return []
   return listFolder(folder)
+})
+
+ipcMain.handle('get-folder-tree', async (event, folder) => {
+  console.log('ipcMain', 'get-folder-tree', folder)
+  if (!folder) return []
+  return getFolderTree(folder)
 })
 
 ipcMain.handle('ilist-files', async (event, folder) => {
