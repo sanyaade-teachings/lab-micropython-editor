@@ -118,6 +118,9 @@ const Disk = {
   renameFile: async (oldName, newName) => {
     return ipcRenderer.invoke('rename-file', oldName, newName)
   },
+  getPathSeparator: () => {
+    return path.sep
+  },
   getNavigationPath: (navigation, target) => {
     return path.join(navigation, target)
   },

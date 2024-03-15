@@ -89,7 +89,7 @@ async function store(state, emitter) {
   win.setWindowSize(720, 640)
 
   state.view = 'editor'
-  state.diskNavigationPath = '/'
+  state.diskNavigationPath = disk.getPathSeparator()
   state.diskNavigationRoot = getDiskNavigationRootFromStorage()
   state.diskFiles = []
   state.boardNavigationPath = '/'
@@ -694,7 +694,6 @@ async function store(state, emitter) {
         state.currentFSItem = file.fileName
         state.transferringProgress = null
         if (file.type === 'folder') {
-          
           let serialPath = await serial.getFullPath('/', state.boardNavigationPath, file.fileName)
           // log('deleteBoardFolder', serialPath)
           await deleteBoardFolder(serialPath)
