@@ -582,7 +582,8 @@ async function store(state, emitter) {
   emitter.on('open-file-options', () => {})
   emitter.on('close-file-options', () => {})
 
-  emitter.on('toggle-file-selection', (file, source, event) => {
+  emitter.on('toggle-file-selection', (file, source, index, event) => {
+    console.log('toggle-file-selection', index, file, source, event.ctrlKey, event.metaKey)
     const isSelected = state.selectedFiles.find((f) => {
       return f.fileName === file.fileName && f.source === source
     })

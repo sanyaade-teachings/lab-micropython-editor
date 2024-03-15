@@ -15,7 +15,7 @@ function DiskFileList(state, emit) {
     if (item.type === 'folder') {
       const isChecked = state.selectedFiles.find(f => f.fileName === item.fileName && f.source === 'disk')
       return html`
-        <div class="item ${isChecked ? 'checked' : ''}" onclick=${(e) => emit('toggle-file-selection', item, 'disk', e)} ondblclick=${() => emit('navigate-disk-folder', item.fileName)}>
+        <div class="item ${isChecked ? 'checked' : ''}" onclick=${(e) => emit('toggle-file-selection', item, 'disk', i, e)} ondblclick=${() => emit('navigate-disk-folder', item.fileName)}>
           ${Checkbox({
             checked: isChecked,
             type: 'folder',
@@ -32,7 +32,7 @@ function DiskFileList(state, emit) {
       const isChecked = state.selectedFiles.find(f => f.fileName === item.fileName && f.source === 'disk')
       return html`
         <div class="item ${isChecked ? 'checked' : ''}"
-          onclick=${(e) => emit('toggle-file-selection', item, 'disk', e)}
+          onclick=${(e) => emit('toggle-file-selection', item, 'disk', i, e)}
           ondblclick=${() => emit('open-single-file', item, 'disk')}
         >
           ${Checkbox({
@@ -107,7 +107,7 @@ function BoardFileList(state, emit) {
     if (item.type === 'folder') {
       const isChecked = state.selectedFiles.find(f => f.fileName === item.fileName && f.source === 'board')
       return html`
-        <div class="item ${isChecked ? 'checked' : ''}" onclick=${(e) => emit('toggle-file-selection', item, 'board', e)} ondblclick=${() => emit('navigate-board-folder', item.fileName)}>
+        <div class="item ${isChecked ? 'checked' : ''}" onclick=${(e) => emit('toggle-file-selection', item, 'board', i, e)} ondblclick=${() => emit('navigate-board-folder', item.fileName)}>
           ${Checkbox({
             checked: isChecked,
             type: 'folder',
@@ -124,7 +124,7 @@ function BoardFileList(state, emit) {
       const isChecked = state.selectedFiles.find(f => f.fileName === item.fileName && f.source === 'board')
       return html`
         <div class="item ${isChecked ? 'checked' : ''}"
-          onclick=${(e) => emit('toggle-file-selection', item, 'board', e)}
+          onclick=${(e) => emit('toggle-file-selection', item, 'board', i, e)}
           ondblclick=${() => emit('open-single-file', item, 'board')}
         >
           ${Checkbox({
