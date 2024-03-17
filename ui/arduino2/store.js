@@ -1095,8 +1095,7 @@ function selectRange(itemA, itemB, source){
         source: source
       }
     })
-  }
-  else(source === 'board'){
+  }else{
     return range(rangeStart, rangeEnd, 1).map((i) => {
       return {
         fileName: i,
@@ -1104,5 +1103,4 @@ function selectRange(itemA, itemB, source){
       }
     })
   }
-
 }
