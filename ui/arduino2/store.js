@@ -940,31 +940,6 @@ function extract(out) {
 /* <<  MOVE THIS TO THE BOARD COMMANDS FILE  */
 
 
-function range(start, stop, step){
-  return Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
-}
-
-function selectRange(start, stop, source){
-  const rangeStart = Math.min(start, stop)
-  const rangeEnd = Math.max(start, stop)
-  if(source === 'disk'){
-    return range(rangeStart, rangeEnd, 1).map((i) => {
-      return {
-        fileName: i,
-        source: source
-      }
-    })
-  }else{
-    return range(rangeStart, rangeEnd, 1).map((i) => {
-      return {
-        fileName: i,
-        source: source
-      }
-    })
-  }
-}
-
-
 function sortFilesAlphabetically(entryA, entryB) {
   return(entryA.fileName.localeCompare(entryB.fileName));
 }
@@ -1082,3 +1057,29 @@ function toggleFileSelection({ fileName, source, selectedFiles }) {
   }
   return result
 }
+
+
+function range(start, stop, step){
+  return Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
+}
+
+function selectRange(start, stop, source){
+  const rangeStart = Math.min(start, stop)
+  const rangeEnd = Math.max(start, stop)
+  if(source === 'disk'){
+    return range(rangeStart, rangeEnd, 1).map((i) => {
+      return {
+        fileName: i,
+        source: source
+      }
+    })
+  }else{
+    return range(rangeStart, rangeEnd, 1).map((i) => {
+      return {
+        fileName: i,
+        source: source
+      }
+    })
+  }
+}
+
