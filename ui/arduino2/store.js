@@ -77,6 +77,7 @@ async function store(state, emitter) {
   state.selectedFiles = []
   state.selectedBoardFiles = []
   state.selectedDiskFiles = []
+  state.lastSelectedFile = null
   state.editingFile = null
   state.creatingFile = null
   state.creatingFolder = null
@@ -578,7 +579,9 @@ async function store(state, emitter) {
         return !(f.fileName === file.fileName && f.source === source)
       })
     } else {
-
+      const newSelectedFiles = selectRange(state.lastSelectedFile, index, source).forEach((f) => {
+      })
+      state.lastSelectedFile = index
       state.selectedFiles.push({
         fileName: file.fileName,
         type: file.type,
@@ -586,10 +589,12 @@ async function store(state, emitter) {
         parentFolder: file.parentFolder
       })
     }
+
     state.selectedDiskFiles = state.selectedFiles.filter((f) => f.source === 'disk')
     state.selectedBoardFiles = state.selectedFiles.filter((f) => f.source === 'board')
     emitter.emit('render')
   })
+
   emitter.on('open-single-file', async(file, source) => {
     state.selectedFiles = []
     state.selectedFiles.push({
@@ -600,6 +605,7 @@ async function store(state, emitter) {
     })
     emitter.emit('open-selected-files')
   })
+
   emitter.on('open-selected-files', async () => {
     let files = []
     for (let i in state.selectedFiles) {
@@ -1044,31 +1050,44 @@ function deselectFilesFromSource(source, selectedFiles) {
   return selectedFiles.filter((f) => f.source !== source)
 }
 
-function toggleFileSelection({ fileName, source, selectedFiles }) {
-  let result = []
-  let file = selectedFiles.find((f) => {
-    return f.fileName === fileName && f.source === source
-  })
-  if (file) {
-    // filter file out
-    result = selectedFiles.filter((f) => {
-      return f.fileName !== fileName && f.source !== source
-    })
-  } else {
-    // push file
-    selectedFiles.push({ fileName, source })
-  }
-  return result
-}
+
+/* NOT USED >> CLEAN UP LATER */
+// function toggleFileSelection({ fileName, source, selectedFiles }) {
+//   let result = []
+//   let file = selectedFiles.find((f) => {
+//     return f.fileName === fileName && f.source === source
+//   })
+//   if (file) {
+//     // filter file out
+//     result = selectedFiles.filter((f) => {
+//       return f.fileName !== fileName && f.source !== source
+//     })
+//   } else {
+//     // push file
+//     selectedFiles.push({ fileName, source })
+//   }
+//   return result
+// }
 
 
 function range(start, stop, step){
   return Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
 }
 
-function selectRange(start, stop, source){
-  const rangeStart = Math.min(start, stop)
-  const rangeEnd = Math.max(start, stop)
+function clearSelection(state, source){
+  if(source === 'disk'){
+    deselectFilesFromSource('disk', state.selectedDiskFiles)
+    state.selectedDiskFiles = []
+  }
+  if(source === 'board'){
+    deselectFilesFromSource('board', state.selectedBoardFiles)
+    state.selectedBoardFiles = []
+  }
+}
+
+function selectRange(itemA, itemB, source){
+  const rangeStart = Math.min(itemA, itemB)
+  const rangeEnd = Math.max(itemA, itemB)
   if(source === 'disk'){
     return range(rangeStart, rangeEnd, 1).map((i) => {
       return {
@@ -1076,7 +1095,8 @@ function selectRange(start, stop, source){
         source: source
       }
     })
-  }else{
+  }
+  else(source === 'board'){
     return range(rangeStart, rangeEnd, 1).map((i) => {
       return {
         fileName: i,
@@ -1084,5 +1104,5 @@ function selectRange(start, stop, source){
       }
     })
   }
-}
 
+}
