@@ -567,6 +567,9 @@ async function store(state, emitter) {
       return f.fileName === file.fileName && f.source === source
     })
     if (!event.ctrlKey && !event.metaKey) {
+      // state.selectedBoardFiles and state.selectedDiskFiles are newly
+      // created at the end of the toggle state, hence here we remove the
+      // files from the section currently being clicked on
       state.selectedFiles = deselectFilesFromSource(source, state.selectedFiles)
     }
     
