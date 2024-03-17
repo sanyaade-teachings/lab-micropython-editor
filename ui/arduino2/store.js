@@ -3,35 +3,12 @@ const serial = window.BridgeSerial
 const disk = window.BridgeDisk
 const win = window.BridgeWindow
 
-function extract(out) {
-  /*
-   * Message ($msg) will come out following this template:
-   * "OK${msg}\x04${err}\x04>"
-   * TODO: consider error handling
-   */
-  return out.slice(2, -3)
-}
-
-function getFolderTree(folder_path, result = []) {
-  fs.readdirSync(folder_path).forEach((file) => {
-  const fPath = path.resolve(folder_path, file)
-  const fileStats = { file, path: fPath }
-  if (fs.statSync(fPath).isDirectory()) {
-    fileStats.type = 'dir'
-    fileStats.files = []
-    result.push(fileStats)
-    return traverse(fPath, fileStats.files)
-  }
-  fileStats.type = 'file'
-  result.push(fileStats)
-  })
-  return result
-}
-
 const newFileContent = `# This program was created in Arduino Lab for MicroPython
 
 print('Hello, MicroPython!')
 `
+
+/*    >>  MOVE THESE TO THE BOARD COMMANDS FILE    */
 const microPythonFShelpers = `
 import os
 os.chdir('/')
@@ -85,6 +62,8 @@ def get_file_tree(path = '.'):
 def print_file_tree(path = '.'):
   print(get_file_tree(path))
 `
+/*    <<  MOVE THESE TO THE BOARD COMMANDS FILE    */
+
 async function store(state, emitter) {
   win.setWindowSize(720, 640)
 
@@ -759,6 +738,7 @@ async function store(state, emitter) {
           emitter.emit('render')
           const folder_path = serial.getFullPath('/', state.boardNavigationPath, file.fileName)
           // log('folder_path', folder_path)
+          /*  >>  MOVE THIS TO THE BOARD COMMANDS FILE  */
           let command = microPythonFShelpers
           command += microPythonFileTree
           command += `print_file_tree('${folder_path}')`
@@ -768,7 +748,9 @@ async function store(state, emitter) {
           output = output.replace(/'/g, '"')
           output = output.split('OK')
           let files = JSON.parse(output)
-           
+          /*  <<  MOVE THIS TO THE BOARD COMMANDS FILE  */
+          /*  <<  RETURN files from it to use here  >>  */
+
           // console.log(files)
           for(f in files){
             const sourcePath = (files[f][1])
@@ -943,16 +925,40 @@ async function deleteBoardFolder(folder_path) {
 
 async function getDiskFolderTree(path) {
   let files = await disk.getFolderTree(path)
-  log(files)
-  // files = files.map(f => ({
-  //   fileName: f.file,
-  //   filePath: f.path,
-  //   type: f.type
-  // }))
-  // // files = files.sort(sortFilesAlphabetically)
-  // log(files)
   return files
 }
+
+/* >>  MOVE THIS TO THE BOARD COMMANDS FILE  */
+function extract(out) {
+  /*
+   * Message ($msg) will come out following this template:
+   * "OK${msg}\x04${err}\x04>"
+   * TODO: consider error handling
+   */
+  return out.slice(2, -3)
+}
+/* <<  MOVE THIS TO THE BOARD COMMANDS FILE  */
+
+
+// function getFolderTree(folder_path, result = []) {
+//   fs.readdirSync(folder_path).forEach((file) => {
+//   const fPath = path.resolve(folder_path, file)
+//   const fileStats = { file, path: fPath }
+//   if (fs.statSync(fPath).isDirectory()) {
+//     fileStats.type = 'dir'
+//     fileStats.files = []
+//     result.push(fileStats)
+//     return traverse(fPath, fileStats.files)
+//   }
+//   fileStats.type = 'file'
+//   result.push(fileStats)
+//   })
+//   return result
+// }
+
+const range = (start, stop, step) =>
+  Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
+
 
 function sortFilesAlphabetically(entryA, entryB) {
   return(entryA.fileName.localeCompare(entryB.fileName));

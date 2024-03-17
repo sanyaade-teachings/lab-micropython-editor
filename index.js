@@ -23,24 +23,31 @@ function listFolder(folder) {
   return files
 }
 
+/* Obtain a flat list of files and folders in a directory */
 function getFolderTree(folder_path, result = []) {
   let fsEntries = []
   traverseDir(folder_path, fsEntries)
   return fsEntries
 }
 
+// TODO: refactor to use ilistFolder if possible
+// Could be turned into an optionally recursive iListFolder
+// and replace it entirely being renamed to iListFolder
 function traverseDir(dir, list) {
   fs.readdirSync(dir).forEach(file => {
     let filePath = path.join(dir, file);
     let isDirectory = fs.lstatSync(filePath).isDirectory()
     let type = isDirectory ? 'folder' : 'file'
     if (isDirectory) {
-       traverseDir(filePath, list);
+      // Recurse
+      traverseDir(filePath, list);
     }
     list.unshift({filePath: filePath, parentPath: dir, fileName: file, type: type, isDirectory: isDirectory});
   });
 }
 
+
+// See if it can be replaced by the code above
 function ilistFolder(folder) {
   let files = fs.readdirSync(path.resolve(folder))
   files = files.filter(f => {
