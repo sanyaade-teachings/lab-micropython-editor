@@ -940,24 +940,29 @@ function extract(out) {
 /* <<  MOVE THIS TO THE BOARD COMMANDS FILE  */
 
 
-// function getFolderTree(folder_path, result = []) {
-//   fs.readdirSync(folder_path).forEach((file) => {
-//   const fPath = path.resolve(folder_path, file)
-//   const fileStats = { file, path: fPath }
-//   if (fs.statSync(fPath).isDirectory()) {
-//     fileStats.type = 'dir'
-//     fileStats.files = []
-//     result.push(fileStats)
-//     return traverse(fPath, fileStats.files)
-//   }
-//   fileStats.type = 'file'
-//   result.push(fileStats)
-//   })
-//   return result
-// }
+function range(start, stop, step){
+  return Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
+}
 
-const range = (start, stop, step) =>
-  Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
+function selectRange(start, stop, source){
+  const rangeStart = Math.min(start, stop)
+  const rangeEnd = Math.max(start, stop)
+  if(source === 'disk'){
+    return range(rangeStart, rangeEnd, 1).map((i) => {
+      return {
+        fileName: i,
+        source: source
+      }
+    })
+  }else{
+    return range(rangeStart, rangeEnd, 1).map((i) => {
+      return {
+        fileName: i,
+        source: source
+      }
+    })
+  }
+}
 
 
 function sortFilesAlphabetically(entryA, entryB) {
