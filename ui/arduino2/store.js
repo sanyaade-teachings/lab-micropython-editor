@@ -90,7 +90,6 @@ async function store(state, emitter) {
   state.isConnected = false
   state.connectedPort = null
 
-
   state.isPanelOpen = false
   state.isSaving = false
   state.savingProgress = 0

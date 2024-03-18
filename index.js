@@ -3,7 +3,6 @@ const path = require('path')
 const fs = require('fs')
 const openAboutWindow = require('about-window').default
 
-const { dir } = require('console')
 let win = null // main window
 
 // HELPERS

@@ -62,6 +62,7 @@ const Serial = {
   uploadFile: async (src, dest, dataConsumer) => {
     return board.fs_put(src, dest, dataConsumer)
   },
+  // keep dataConsumer for future progress display on downloading large files
   downloadFile: async (src, dest, dataConsumer) => {
     let contents = await Serial.loadFile(src)
     return ipcRenderer.invoke('save-file', dest, contents)
