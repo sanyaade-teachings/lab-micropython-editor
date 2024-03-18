@@ -71,7 +71,7 @@ function DiskFileList(state, emit) {
   const list = html`
     <div class="file-list">
       <div class="list">
-        <div class="item" onclick=${() => emit('navigate-disk-parent')}>..</div>
+        <div class="item" ondblclick=${() => emit('navigate-disk-parent')}>..</div>
         ${state.creatingFile == 'disk' ? newFileItem : null}
         ${state.creatingFolder == 'disk' ? newFolderItem : null}
         ${state.diskFiles.map(DiskFileItem)}
@@ -163,7 +163,7 @@ function BoardFileList(state, emit) {
   const list = html`
     <div class="file-list">
       <div class="list">
-        <div class="item" onclick=${() => emit('navigate-board-parent')}>..</div>
+        <div class="item" ondblclick=${() => emit('navigate-board-parent')}>..</div>
         ${state.creatingFile == 'serial' ? newFileItem : null}
         ${state.creatingFolder == 'serial' ? newFolderItem : null}
         ${state.boardFiles.map(BoardFileItem)}
