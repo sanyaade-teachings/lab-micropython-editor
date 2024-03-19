@@ -13,7 +13,7 @@ const microPythonFShelpers = `
 import os
 os.chdir('/')
 def is_directory(path):
-  return True if stat(path)[0] == 0x4000 else False
+  return True if os.stat(path)[0] == 0x4000 else False
   
 def file_tree_generator(folder_path, depth=0):
   try:
