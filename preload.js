@@ -21,6 +21,9 @@ const Serial = {
   run: async (code) => {
     return board.run(code)
   },
+  exec_file: async (file, dataConsumer) {
+    return board.execfile(file, dataConsumer)
+  },
   get_prompt: async () => {
     return board.get_prompt()
   },
